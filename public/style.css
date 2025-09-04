@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@layer components {
+  .container {
+    @apply w-full mx-auto px-4;
+  }
+
+  @screen sm {
+    .container {
+      @apply max-w-sm;
+    }
+  }
+
+  @screen md {
+    .container {
+      @apply max-w-md;
+    }
+  }
+
+  @screen lg {
+    .container {
+      @apply max-w-lg;
+    }
+  }
+
+  @screen xl {
+    .container {
+      @apply max-w-xl;
+    }
+  }
+
+  @screen 2xl {
+    .container {
+      @apply max-w-2xl;
+    }
+  }
+}
