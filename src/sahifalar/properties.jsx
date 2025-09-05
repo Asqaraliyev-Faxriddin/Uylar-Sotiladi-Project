@@ -103,11 +103,11 @@ export default function PropertiesCarousel() {
 
 
   const settings = {
-    dots: true,          // nuqtalar
+    dots: true,     
     infinite: false,     
     speed: 500,
-    slidesToShow: 3,     // har safar 3 ta karta ko‘rinadi
-    slidesToScroll: 3,   // keyingilariga 3 ta o‘tadi
+    slidesToShow: 3,    
+    slidesToScroll: 3,   
     responsive: [
       {
         breakpoint: 1024,
@@ -134,74 +134,96 @@ export default function PropertiesCarousel() {
       </div>
 
       <Slider {...settings}>
-        {properties.map((prop) => (
-          <div key={prop.id} className="p-2">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="relative">
-                <img
-                  src={prop.img}
-                  alt={prop.title}
-                  className="w-full h-60 object-cover"
-                />
-                <img
-                  src={`https://i.pravatar.cc/100?img=${prop.id}`}
-                  alt="Agent"
-                  className="absolute -bottom-6 left-5 w-14 h-14 rounded-full border-4 border-white"
-                />
-              </div>
+  {properties.map((prop) => (
+    <div key={prop.id} className="p-2">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="relative">
+          {/* For Sale va Featured badge'lar */}
+          <div className="absolute top-3 left-3 flex gap-2">
+            <span className="bg-blue-600 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-md">
+              For Sale
+            </span>
+            <span className="bg-yellow-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-md">
+              Featured
+            </span>
+          </div>
 
-              <div className="pt-10 px-5 pb-5">
-                <h3 className="text-lg font-semibold mb-1">{prop.title}</h3>
-                <p className="text-gray-500 text-sm mb-4">{prop.location}</p>
+          {/* Asosiy rasm */}
+          <img
+            src={prop.img}
+            alt={prop.title}
+            className="w-full h-60 object-cover"
+          />
 
-                {/* Icons with text below */}
-                <div className="flex justify-between text-center text-gray-600 mb-4">
-                  <div className="flex flex-col items-center">
-                    <img src="https://img.icons8.com/ios-filled/24/000000/bed.png" alt="Beds"/>
-                    <span className="text-sm mt-1">{prop.beds}</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <img src="https://img.icons8.com/ios-filled/24/000000/bath.png" alt="Baths"/>
-                    <span className="text-sm mt-1">{prop.baths}</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <img src="https://img.icons8.com/ios-filled/24/000000/garage.png" alt="Garage"/>
-                    <span className="text-sm mt-1">{prop.garage}</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <img src="https://img.icons8.com/ios-filled/24/000000/area-chart.png" alt="Size"/>
-                    <span className="text-sm mt-1">{prop.size}</span>
-                  </div>
-                </div>
+          {/* Agent rasmi */}
+          <img
+            src={`https://i.pravatar.cc/100?img=${prop.id}`}
+            alt="Agent"
+            className="absolute -bottom-6 left-5 w-14 h-14 rounded-full border-4 border-white"
+          />
+        </div>
 
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="line-through text-gray-400 text-sm mb-1">
-                      {prop.oldPrice}
-                    </p>
-                    <p className="text-blue-600 font-bold text-lg">
-                      {prop.newPrice}
-                    </p>
-                  </div>
+        <div className="pt-10 px-5 pb-5">
+          <h3 className="text-lg font-semibold mb-1">{prop.title}</h3>
+          <p className="text-gray-500 text-sm mb-4">{prop.location}</p>
 
-                  <button
-                    onClick={() => toggleFavorite(prop.id)}
-                    className={`text-2xl ${favorites[prop.id] ? "text-red-500" : "text-gray-400"}`}
-                  >
-                    {favorites[prop.id] ? "❤️" : "🤍"}
-                  </button>
-                </div>
-              </div>
+          {/* Icons with text below */}
+          <div className="flex justify-between text-center text-gray-600 mb-4">
+            <div className="flex flex-col items-center">
+              <img
+                src="https://img.icons8.com/ios-filled/24/000000/bed.png"
+                alt="Beds"
+              />
+              <span className="text-sm mt-1">{prop.beds}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <img
+                src="https://img.icons8.com/ios-filled/24/000000/bath.png"
+                alt="Baths"
+              />
+              <span className="text-sm mt-1">{prop.baths}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <img
+                src="https://img.icons8.com/ios-filled/24/000000/garage.png"
+                alt="Garage"
+              />
+              <span className="text-sm mt-1">{prop.garage}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <img
+                src="https://img.icons8.com/ios-filled/24/000000/area-chart.png"
+                alt="Size"
+              />
+              <span className="text-sm mt-1">{prop.size}</span>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="line-through text-gray-400 text-sm mb-1">
+                {prop.oldPrice}
+              </p>
+              <p className="text-blue-600 font-bold text-lg">
+                {prop.newPrice}
+              </p>
             </div>
 
-
-
-
-            
-            
+            <button
+              onClick={() => toggleFavorite(prop.id)}
+              className={`text-2xl ${
+                favorites[prop.id] ? "text-red-500" : "text-gray-400"
+              }`}
+            >
+              {favorites[prop.id] ? "❤️" : "🤍"}
+            </button>
           </div>
-        ))}
-      </Slider>
+        </div>
+      </div>
+    </div>
+  ))}
+</Slider>
+
       <section className="bg-white py-12">
   <div className="max-w-6xl mx-auto px-4 text-center">
     <h2 className="text-2xl font-bold mb-3">Why Choose Us?</h2>

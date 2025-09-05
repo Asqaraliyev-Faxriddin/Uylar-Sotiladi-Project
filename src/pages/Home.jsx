@@ -50,9 +50,7 @@ function Home() {
   <p className="text-lg mb-1">112 Glenwood Ave Hyde Park, Boston, MA</p>
   <p className="text-xl font-semibold mb-4">$5,250/mo</p>
 
-  {/* Icons with numbers */}
   <div className="flex justify-center gap-6 mt-2">
-    {/* Beds */}
     <div className="flex flex-col items-center">
       <img
         src="https://img.icons8.com/ios-filled/30/ffffff/bed.png"
