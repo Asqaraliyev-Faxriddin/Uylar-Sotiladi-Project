@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { Heart } from "lucide-react";
+import { Snackbar, Alert } from "@mui/material";
 import { useUserStore } from "../store/UserStore";
 import { useNavigate } from "react-router-dom";
 
@@ -10,65 +11,68 @@ export default function RasmlarCarusel() {
   const { properties, setUylar, setHouseId } = useUserStore();
   const navigate = useNavigate();
 
-  // ❤️ Like bosilganda
-  const toggleFavorite = (id) => {
+  // ✅ Snackbar uchun state
+  const [message, setMessage] = useState("");
+  const [severity, setSeverity] = useState("info");
+  const [open, setOpen] = useState(false);
+
+  const showSnackbar = useCallback((msg, sev = "info") => {
+    setMessage(msg);
+    setSeverity(sev);
+    setOpen(true);
+  }, []);
+
+  const handleClose = (_, reason) => {
+    if (reason === "clickaway") return;
+    setOpen(false);
+  };
+
+  // ✅ Component mount log
+  useEffect(() => {
+    console.log("Carousel mounted ✅");
+  }, []);
+
+  // ✅ Like toggle
+  const toggleFavorite = (id, currentHeart) => {
     const updated = properties.map((el) =>
       el.id === id
         ? {
             ...el,
-            hearth: !el.hearth,
-            likeCount: el.hearth ? el.likeCount - 1 : el.likeCount + 1,
+            hearth: !currentHeart,
+            likeCount: currentHeart ? el.likeCount - 1 : el.likeCount + 1,
           }
         : el
     );
     setUylar(updated);
+
+    // 🔔 Snackbar chiqishi
+    showSnackbar(
+      currentHeart ? "Removed from favorites ❤️‍🔥" : "Added to favorites ❤️",
+      "success"
+    );
   };
 
-  // 🔗 Rasm bosilganda House sahifasiga yo‘naltirish
+  // ✅ House/About ga o'tish
   const goToHouse = (id) => {
     setHouseId(id);
     navigate("/house/about");
   };
 
-  useMemo(() => {
-    console.log("Carousel mounted ✅");
-  }, []);
-
+  // ✅ Slider sozlamalari
   const settings = {
     dots: true,
     infinite: true,
     autoplay: true,
     autoplaySpeed: 2000,
     speed: 600,
-    slidesToShow: 3, // default: katta ekranlar uchun
+    slidesToShow: 3,
     slidesToScroll: 1,
     responsive: [
-      {
-        breakpoint: 1280, // 1280px dan kichiklarda
-        settings: {
-          slidesToShow: 3, // hali ham 3 ta (katta noutbuklar uchun)
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 1024, // 1024px dan kichiklarda
-        settings: {
-          slidesToShow: 2, // planshetlarda 2 ta
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 640, // 640px dan kichiklarda
-        settings: {
-          slidesToShow: 1, // telefonlarda 1 ta
-          slidesToScroll: 1,
-        },
-      },
+      { breakpoint: 1280, settings: { slidesToShow: 3, slidesToScroll: 1 } },
+      { breakpoint: 1024, settings: { slidesToShow: 2, slidesToScroll: 1 } },
+      { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1 } },
     ],
   };
-  
-  
-  
 
   return (
     <div className="p-6 sm:p-10">
@@ -85,6 +89,7 @@ export default function RasmlarCarusel() {
         {properties.map((prop) => (
           <div key={prop.id} className="p-2">
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              {/* 📌 Top labels */}
               <div className="relative">
                 <div className="absolute top-3 left-3 flex gap-2">
                   <span className="bg-blue-600 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-full shadow-md">
@@ -95,7 +100,7 @@ export default function RasmlarCarusel() {
                   </span>
                 </div>
 
-                {/* 🔗 Rasm bosilganda house sahifasiga o'tadi */}
+                {/* 📌 Uy rasmi */}
                 <button
                   onClick={() => goToHouse(prop.id)}
                   className="w-full relative"
@@ -105,21 +110,23 @@ export default function RasmlarCarusel() {
                     alt={prop.title}
                     className="w-full h-52 sm:h-60 object-cover"
                   />
-                  <span
-                    className="absolute bottom-3 right-3 bg-blue-600 text-white p-3 rounded-full shadow-lg 
-                               transition-all duration-300 ease-in-out"
-                  >
+                  <span className="absolute bottom-3 right-3 bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 ease-in-out">
                     ➜
                   </span>
                 </button>
 
+                {/* 📌 User avatar */}
                 <img
-                  src={prop.profileImg || `https://i.pravatar.cc/100?img=${prop.id}`}
+                  src={
+                    prop.user?.profileImg ||
+                    `https://i.pravatar.cc/100?u=${prop.id}`
+                  }
                   alt="Agent"
-                  className="absolute -bottom-6 left-5 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-4 border-white"
+                  className="absolute -bottom-6 left-5 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-4 border-white object-cover"
                 />
               </div>
 
+              {/* 📌 Uy ma’lumotlari */}
               <div className="pt-10 px-4 sm:px-5 pb-5">
                 <h3 className="text-base sm:text-lg font-semibold mb-1">
                   {prop.title}
@@ -128,53 +135,43 @@ export default function RasmlarCarusel() {
                   {prop.address}
                 </p>
 
+                {/* 📌 Stats */}
                 <div className="flex justify-between text-center text-gray-600 mb-4">
                   <div className="flex flex-col items-center">
-                    <img
-                      src="https://img.icons8.com/ios-filled/20/000000/bed.png"
-                      alt="Beds"
-                    />
+                    <img src="https://img.icons8.com/ios-filled/20/000000/bed.png" alt="Beds" />
                     <span className="text-xs sm:text-sm mt-1">{prop.beds}</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <img
-                      src="https://img.icons8.com/ios-filled/20/000000/bath.png"
-                      alt="Baths"
-                    />
+                    <img src="https://img.icons8.com/ios-filled/20/000000/bath.png" alt="Baths" />
                     <span className="text-xs sm:text-sm mt-1">{prop.baths}</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <img
-                      src="https://img.icons8.com/ios-filled/20/000000/garage.png"
-                      alt="Garage"
-                    />
+                    <img src="https://img.icons8.com/ios-filled/20/000000/garage.png" alt="Garage" />
                     <span className="text-xs sm:text-sm mt-1">{prop.garage}</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <img
-                      src="https://img.icons8.com/ios-filled/20/000000/area-chart.png"
-                      alt="Size"
-                    />
+                    <img src="https://img.icons8.com/ios-filled/20/000000/area-chart.png" alt="Size" />
                     <span className="text-xs sm:text-sm mt-1">{prop.size}</span>
                   </div>
                 </div>
 
+                {/* 📌 Narx + Like */}
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="line-through text-gray-400 text-xs sm:text-sm mb-1">
-                      ${prop.price}
+                      ${prop.discount}
                     </p>
                     <p className="text-blue-600 font-bold text-base sm:text-lg">
-                      ${prop.discount}
+                      ${prop.price}
                     </p>
                   </div>
 
                   <button
-                    onClick={() => toggleFavorite(prop.id)}
+                    onClick={() => toggleFavorite(prop.id, prop.hearth)}
                     className="flex items-center gap-1"
                   >
                     <Heart
-                      className={`w-6 h-6 cursor-pointer ${
+                      className={`w-6 h-6 cursor-pointer transition-colors duration-300 ${
                         prop.hearth
                           ? "text-red-500 fill-red-500"
                           : "text-gray-400"
@@ -190,6 +187,30 @@ export default function RasmlarCarusel() {
           </div>
         ))}
       </Slider>
+
+      {/* ✅ Snackbar */}
+      <Snackbar
+        open={open}
+        autoHideDuration={3000}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleClose}
+          severity={severity}
+          sx={{
+            width: "100%",
+            fontSize: "1.1rem",
+            fontWeight: 500,
+            p: 2,
+            borderRadius: 3,
+            minWidth: "350px",
+            boxShadow: 4,
+          }}
+        >
+          {message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

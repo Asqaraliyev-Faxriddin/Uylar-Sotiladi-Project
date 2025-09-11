@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import { Heart } from "lucide-react";
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert, Button } from "@mui/material";
 
 import { useUserStore } from "../store/UserStore";
 import axios from "axios";
@@ -12,16 +12,58 @@ import { useNavigate } from "react-router-dom";
 export default function PropertiesCarousel() {
   const { properties, setUylar, setHouseId } = useUserStore();
   const [loading, setLoading] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (showAlert) {
-      const timer = setTimeout(() => setShowAlert(false), 2000);
-      return () => clearTimeout(timer);
+  const [message, setMessage] = useState("");
+  const [severity, setSeverity] = useState("info");
+  const [open, setOpen] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  const showSnackbar = useCallback((msg, sev = "info") => {
+    setMessage(msg);
+    setSeverity(sev);
+    setOpen(true);
+  }, []);
+
+  const handleClose = (_, reason) => {
+    if (reason === "clickaway") return;
+    setOpen(false);
+  };
+
+  const checkToken = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.log("salom");
+      
+      setShowLoginPrompt(true);
+      return null;
     }
-  }, [showAlert]);
+
+    try {
+      const res = await axios.get("http://localhost:3000/profile/my/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+
+      if (res.data && res.data.data.id) {
+        console.log("rsr");
+        
+        return res.data.data; 
+      } else {
+        
+        setShowLoginPrompt(true);
+        return null;
+      }
+    } catch (err) {
+      console.log("Token xatosi:", err);
+
+      if (err.response?.status === 401) {
+        setShowLoginPrompt(true);
+      }
+      return null;
+    }
+  };
 
   async function uylar_Ol() {
     try {
@@ -32,7 +74,7 @@ export default function PropertiesCarousel() {
         let features = {};
         try {
           features = JSON.parse(el.features || "{}");
-        } catch (e) {
+        } catch {
           features = {};
         }
 
@@ -40,6 +82,7 @@ export default function PropertiesCarousel() {
           id: el.id || index + 1,
           img: el.img,
           title: el.title,
+          profileImg: el.profileImg,
           address: el.address,
           country: el.country,
           beds: features.rooms || 0,
@@ -56,10 +99,10 @@ export default function PropertiesCarousel() {
         };
       });
 
-      setUylar(malumotlar); // ✅ store ga yozamiz
+      setUylar(malumotlar);
     } catch (error) {
       if (error.response?.status === 401) {
-        alert("Token muddati tugagan, qaytadan login qiling.");
+        setShowLoginPrompt(true);
         navigate("/login");
       }
     } finally {
@@ -71,28 +114,55 @@ export default function PropertiesCarousel() {
     uylar_Ol();
   }, []);
 
-  // ❤️ Like toggle qilish funksiyasi
-  const toggleFavorite = (id, currentHeart) => {
-    const updated = properties.map((prop) =>
-      prop.id === id
-        ? {
-            ...prop,
-            hearth: !currentHeart,
-            likeCount: currentHeart ? prop.likeCount - 1 : prop.likeCount + 1,
-          }
-        : prop
-    );
-
-    setUylar(updated);
-
-    setAlertMessage(
-      currentHeart ? "Removed from favorites ❤️‍🔥" : "Added to favorites ❤️"
-    );
-    setShowAlert(true);
+  const toggleFavorite = async (houseId, currentHeart) => {
+    const user = await checkToken();
+    if (!user) return;
+  
+    const token = localStorage.getItem("token"); // 🔑 tokenni olish
+  
+    try {
+      await axios.post(
+        "http://localhost:3000/favorites",
+        {
+          like: !currentHeart,  // avvalgi holatni teskarisi
+          userId: user.id,      // 🔑 to‘g‘ri ishlatish
+          houseId: houseId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      const updated = properties.map((prop) =>
+        prop.id === houseId
+          ? {
+              ...prop,
+              hearth: !currentHeart,
+              likeCount: currentHeart
+                ? prop.likeCount - 1
+                : prop.likeCount + 1,
+            }
+          : prop
+      );
+      setUylar(updated);
+  
+      showSnackbar(
+        currentHeart
+          ? "Removed from favorites ❤️‍🔥"
+          : "Added to favorites ❤️",
+        "success"
+      );
+    } catch (err) {
+      console.error("Favorite xatosi:", err.response?.data || err.message);
+      showSnackbar("Xatolik yuz berdi", "error");
+    }
   };
+  
+  // ✅ House/About ga o‘tish
+  const goToHouse = async (id) => {
+    const user = await checkToken();
+    if (!user) return;
 
-  // 🔗 House detail sahifasiga yo‘naltirish
-  const goToHouse = (id) => {
     setHouseId(id);
     navigate("/house/about");
   };
@@ -103,41 +173,15 @@ export default function PropertiesCarousel() {
     autoplay: true,
     autoplaySpeed: 2000,
     speed: 600,
-    slidesToShow: 3, // 🖥️ Desktop default
+    slidesToShow: 3,
     slidesToScroll: 1,
     responsive: [
-      {
-        breakpoint: 1440, // Katta laptop (2 ta chiqarish mumkin)
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 1024, // O‘rtacha laptop / kichik monitor
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 768, // 📱 Planshet
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 480, // 📱 Kichik telefon
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
+      { breakpoint: 1440, settings: { slidesToShow: 2 } },
+      { breakpoint: 1024, settings: { slidesToShow: 2 } },
+      { breakpoint: 768, settings: { slidesToShow: 1 } },
+      { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
   };
-  
-  
 
   return (
     <div className="p-10">
@@ -167,7 +211,6 @@ export default function PropertiesCarousel() {
                     )}
                   </div>
 
-                  {/* 🔗 Rasm bosilganda house detail sahifasiga o'tadi */}
                   <button
                     onClick={() => goToHouse(prop.id)}
                     className="w-full relative"
@@ -177,15 +220,11 @@ export default function PropertiesCarousel() {
                       alt={prop.title}
                       className="w-full h-52 sm:h-60 object-cover"
                     />
-                    <span
-                      className="absolute bottom-3 right-3 bg-blue-600 text-white p-3 rounded-full shadow-lg 
-                                 transition-all duration-300 ease-in-out"
-                    >
+                    <span className="absolute bottom-3 right-3 bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 ease-in-out">
                       ➜
                     </span>
                   </button>
 
-                  {/* User Image */}
                   {prop.user?.profileImg && (
                     <img
                       src={prop.user.profileImg}
@@ -195,7 +234,6 @@ export default function PropertiesCarousel() {
                   )}
                 </div>
 
-                {/* Content */}
                 <div className="pt-10 px-4 sm:px-5 pb-5">
                   <h3 className="text-base sm:text-lg font-semibold mb-1">
                     {prop.title}
@@ -204,46 +242,52 @@ export default function PropertiesCarousel() {
                     {prop.address}, {prop.country}
                   </p>
 
-                  {/* Features */}
                   <div className="flex justify-between text-center text-gray-600 mb-4">
                     <div className="flex flex-col items-center">
                       <img
                         src="https://img.icons8.com/ios-filled/20/000000/bed.png"
                         alt="Beds"
                       />
-                      <span className="text-xs sm:text-sm mt-1">{prop.beds}</span>
+                      <span className="text-xs sm:text-sm mt-1">
+                        {prop.beds}
+                      </span>
                     </div>
                     <div className="flex flex-col items-center">
                       <img
                         src="https://img.icons8.com/ios-filled/20/000000/bath.png"
                         alt="Baths"
                       />
-                      <span className="text-xs sm:text-sm mt-1">{prop.baths}</span>
+                      <span className="text-xs sm:text-sm mt-1">
+                        {prop.baths}
+                      </span>
                     </div>
                     <div className="flex flex-col items-center">
                       <img
                         src="https://img.icons8.com/ios-filled/20/000000/garage.png"
                         alt="Garage"
                       />
-                      <span className="text-xs sm:text-sm mt-1">{prop.garage}</span>
+                      <span className="text-xs sm:text-sm mt-1">
+                        {prop.garage}
+                      </span>
                     </div>
                     <div className="flex flex-col items-center">
                       <img
                         src="https://img.icons8.com/ios-filled/20/000000/area-chart.png"
                         alt="Size"
                       />
-                      <span className="text-xs sm:text-sm mt-1">{prop.size}</span>
+                      <span className="text-xs sm:text-sm mt-1">
+                        {prop.size}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Price + Heart */}
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="line-through text-gray-400 text-xs sm:text-sm mb-1">
-                        ${prop.discount}/mo
+                        ${prop.discount}
                       </p>
                       <p className="text-blue-600 font-bold text-base sm:text-lg">
-                        ${prop.price}/mo
+                        ${prop.price}
                       </p>
                     </div>
 
@@ -258,7 +302,6 @@ export default function PropertiesCarousel() {
                             : "text-gray-400"
                         }`}
                       />
-                      {/* Like count badge */}
                       <span className="absolute -top-3 -right-3 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
                         {prop.likeCount}
                       </span>
@@ -271,12 +314,71 @@ export default function PropertiesCarousel() {
         </Slider>
       )}
 
+      {/* ✅ Umumiy Snackbar */}
       <Snackbar
-        open={showAlert}
+        open={open}
+        autoHideDuration={3000}
+        onClose={handleClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert severity="info" sx={{ width: "100%" }}>
-          {alertMessage}
+        <Alert
+          onClose={handleClose}
+          severity={severity}
+          sx={{
+            width: "100%",
+            fontSize: "1.1rem",
+            fontWeight: 500,
+            p: 2,
+            borderRadius: 3,
+            minWidth: "350px",
+            boxShadow: 4,
+          }}
+        >
+          {message}
+        </Alert>
+      </Snackbar>
+
+      {/* ✅ Login prompt */}
+      <Snackbar
+        open={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity="warning"
+          sx={{
+            width: "100%",
+            fontSize: "1.1rem",
+            fontWeight: 500,
+            p: 2,
+            borderRadius: 3,
+            minWidth: "400px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: 5,
+          }}
+        >
+          <span>Login qilasizmi?</span>
+          <div>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                setShowLoginPrompt(false);
+                navigate("/login");
+              }}
+            >
+              Ha
+            </Button>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => setShowLoginPrompt(false)}
+            >
+              Yo‘q
+            </Button>
+          </div>
         </Alert>
       </Snackbar>
     </div>
