@@ -103,18 +103,32 @@ export default function PropertiesCarousel() {
     autoplay: true,
     autoplaySpeed: 2000,
     speed: 600,
-    slidesToShow: 3, // default (desktop)
+    slidesToShow: 3, // 🖥️ Desktop default
     slidesToScroll: 1,
     responsive: [
       {
-        breakpoint: 1280, // 💻 laptop va kichik ekranlar
+        breakpoint: 1440, // Katta laptop (2 ta chiqarish mumkin)
         settings: {
           slidesToShow: 2,
           slidesToScroll: 1,
         },
       },
       {
-        breakpoint: 768, // 📱 planshet va telefon
+        breakpoint: 1024, // O‘rtacha laptop / kichik monitor
+        settings: {
+          slidesToShow: 2,
+          slidesToScroll: 1,
+        },
+      },
+      {
+        breakpoint: 768, // 📱 Planshet
+        settings: {
+          slidesToShow: 1,
+          slidesToScroll: 1,
+        },
+      },
+      {
+        breakpoint: 480, // 📱 Kichik telefon
         settings: {
           slidesToShow: 1,
           slidesToScroll: 1,
@@ -122,6 +136,7 @@ export default function PropertiesCarousel() {
       },
     ],
   };
+  
   
 
   return (
